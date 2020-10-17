@@ -59,6 +59,7 @@ class TailBlock(nn.Module):
         super(TailBlock,self).__init__()
         pass
 
+# todo: UNDONE
 class MultiTaskNetwork(nn.Module):
     def __init__(self):
         super(MultiTaskNetwork,self).__init__()
@@ -67,7 +68,7 @@ class MultiTaskNetwork(nn.Module):
         init_pretrained_weights(self.FeatureExtraction,model_pretrained_path['resnet34'])
         self.HairPart = []
         self.EyesPart = []
-        self.HairColoePart = []
+        self.HairColorPart = []
         
 
         self.HolisticPart = []
