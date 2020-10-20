@@ -59,24 +59,54 @@ class TailBlock(nn.Module):
         super(TailBlock,self).__init__()
         pass
 
+
+'''
+8 subtasks.
+Holistic    : 3/11/14/19/21/26/27/32/40
+Hair        : 5/6/9/10/12/18/29/33/34/36
+Eyes        : 2/4/13/16/24
+Nose        : 8/28/
+Cheek       : 20/30/ (31 sideburns /35 wearing_earrings)
+Mouth(beard): 1/7/22/23/37
+Chin        : 15/17/25
+Neck        : 38/39
+'''
 # todo: UNDONE
 class MultiTaskNetwork(nn.Module):
+    '''
+    Completed network.
+    '''
     def __init__(self):
         super(MultiTaskNetwork,self).__init__()
         self.FeatureExtraction = FeatureExtraction()
-
         init_pretrained_weights(self.FeatureExtraction,model_pretrained_path['resnet34'])
-        self.HairPart = []
-        self.EyesPart = []
-        self.HairColorPart = []
         
+        self.HairPart = SubTask()
+        self.EyesPart = SubTask()
+        self.NosePart = SubTask()
+        self.CheekPart = SubTask()
+        self.MouthPart = SubTask()
+        self.ChinPart = SubTask()
+        self.NeckPart = SubTask()
+        self.HolisticPart = SubTask()
 
-        self.HolisticPart = []
+    def forward(self,x):
+        x = self.FeatureExtraction(x)
+        hair = self.HairPart(x)
+        eyes = self.EyesPart(x)
+        nose = self.NosePart(x)
+        cheek = self.CheekPart(x)
+        mouth = self.MouthPart(x)
+        chin = self.ChinPart(x)
+        neck = self.NeckPart(x)
 
-    def forward(self):
-        pass
+        holistic = self.HolisticPart(x)
+        return hair,eyes,nose,cheek,mouth,chin,neck,holistic
 
 class StructureCheck(nn.Module):
+    '''
+    Just for test on cifar-10.
+    '''
     def __init__(self):
         super(StructureCheck,self).__init__()
         self.FeatureExtraction = FeatureExtraction()
