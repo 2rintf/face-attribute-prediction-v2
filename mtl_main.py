@@ -40,9 +40,9 @@ parser.add_argument('--epochs', default=90, type=int, metavar='N',
                     help='number of total epochs to run')
 parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
                     help='manual epoch number (useful on restarts)')
-parser.add_argument('-b', '--batch-size', default=128, type=int,
+parser.add_argument('-b', '--batch-size', default=256, type=int,
                     metavar='N',
-                    help='mini-batch size (default: 128), this is the total '
+                    help='mini-batch size (default: 256), this is the total '
                          'batch size of all GPUs on the current node when '
                          'using Data Parallel or Distributed Data Parallel')
 parser.add_argument('--lr', '--learning-rate', default=1e-3, type=float,
@@ -98,6 +98,10 @@ def main_worker(args):
                                     lr=args.lr,
                                     )
     
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer2,
+                                                    [40],
+                                                    gamma=0.3)
+
     # optionally resume from a checkpoint
     if args.resume:
         if os.path.isfile(args.resume):
@@ -115,9 +119,56 @@ def main_worker(args):
         else:
             print("=> no checkpoint found at '{}'".format(args.resume))
 
+    # Data Loading
+    data_DIR = args.data
+    normalize = transforms.Normalize(mean=[0.5, 0.5, 0.5],
+                                    std=[0.5, 0.5, 0.5])
 
-def criterion():
-    
+    train_dataset = CelebA(
+        data_DIR,
+        '20_train_data.txt',
+        transforms.Compose([
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            normalize,
+        ]))
+
+    train_loader = torch.utils.data.DataLoader(
+        train_dataset, batch_size=args.batch_size, shuffle=True,
+        num_workers=args., pin_memory=True)
+
+    val_dataset = CelebA(
+        data_DIR,
+        '20_val_data.txt',
+        transforms.Compose([
+            transforms.ToTensor(),
+            normalize,
+        ]))
+    val_loader = torch.utils.data.DataLoader(
+        val_dataset,
+        batch_size=BATCH_SIZE, shuffle=False,
+        num_workers=4, pin_memory=True)
+    test_dataset = CelebA(
+        ROOT_PATH,
+        '20_test_data.txt',
+        transforms.Compose([
+            transforms.ToTensor(),
+            normalize,
+        ]))
+    test_loader = torch.utils.data.DataLoader(
+        test_dataset,
+        batch_size=BATCH_SIZE, shuffle=False,
+        num_workers=4, pin_memory=True)
+
+
+def criterion(y_pred, y_true, log_vars):
+    loss = 0
+    for i in range(len(y_pred)):
+    precision = torch.exp(-log_vars[i])
+    diff = (y_pred[i]-y_true[i])**2.
+    loss += torch.sum(precision * diff + log_vars[i], -1)
+    return torch.mean(loss)
+
 
 if __name__ == '__main__':
     main()
