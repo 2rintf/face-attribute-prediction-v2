@@ -62,14 +62,14 @@ class TailBlock(nn.Module):
 
 '''
 8 subtasks.
-Holistic    : 3/11/14/19/21/26/27/32/40
-Hair        : 5/6/9/10/12/18/29/33/34/36
-Eyes        : 2/4/13/16/24
-Nose        : 8/28/
-Cheek       : 20/30/ (31 sideburns /35 wearing_earrings)
-Mouth(beard): 1/7/22/23/37
-Chin        : 15/17/25
-Neck        : 38/39
+Holistic    : 3/11/14/19/21/26/27/32/40   [9]
+Hair        : 5/6/9/10/12/18/29/33/34/36  [10]
+Eyes        : 2/4/13/16/24  [5]        
+Nose        : 8/28/         [2]
+Cheek       : 20/30/ (31 sideburns /35 wearing_earrings)   [4]
+Mouth(beard): 1/7/22/23/37  [5]
+Chin        : 15/17/25      [3]
+Neck        : 38/39         [2]     
 '''
 # todo: UNDONE
 class MultiTaskNetwork(nn.Module):
@@ -81,14 +81,14 @@ class MultiTaskNetwork(nn.Module):
         self.FeatureExtraction = FeatureExtraction()
         init_pretrained_weights(self.FeatureExtraction,model_pretrained_path['resnet34'])
         
-        self.HairPart = SubTask()
-        self.EyesPart = SubTask()
-        self.NosePart = SubTask()
-        self.CheekPart = SubTask()
-        self.MouthPart = SubTask()
-        self.ChinPart = SubTask()
-        self.NeckPart = SubTask()
-        self.HolisticPart = SubTask()
+        self.HairPart = SubTask(10)
+        self.EyesPart = SubTask(5)
+        self.NosePart = SubTask(2)
+        self.CheekPart = SubTask(4)
+        self.MouthPart = SubTask(5)
+        self.ChinPart = SubTask(3)
+        self.NeckPart = SubTask(2)
+        self.HolisticPart = SubTask(9)
 
     def forward(self,x):
         x = self.FeatureExtraction(x)
