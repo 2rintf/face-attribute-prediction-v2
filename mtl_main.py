@@ -29,6 +29,9 @@ model_names = sorted(name for name in models.__dict__
 parser = argparse.ArgumentParser(description='czd\'s PyTorch Training')
 parser.add_argument('--data', metavar='DIR',
                     help='path to dataset')
+parser.add_argument('--data-file', metavar='N',default="",type=str,
+                    help='path to dataset file(train_part.txt/val_par.txt/test_part.txt)')
+
 # parser.add_argument('-a', '--arch', metavar='ARCH', default='resnet18',
 #                     choices=model_names,
 #                     help='model architecture: ' +
@@ -84,6 +87,7 @@ def main_worker(args):
     EPOCHS = args.epochs
     NUM_WORKERS = args.workers
     DIR = args.data
+    DATA_FILE_DIR = args.data_file
     LR = args.lr
 
     model = MultiTaskNetwork()
@@ -185,6 +189,7 @@ def criterion(y_pred, y_true, log_vars):
 def showParam(args):
     print("Input params: ")
     print("\tDataset dir : %s \n \
+        Dataset file dir : %s \n \
         Num workers : %d \n \
         Epochs : %d \n \
         Batch size : %d \n \
@@ -197,6 +202,7 @@ def showParam(args):
         Print freq : %d" % 
             (
                 args.data,
+                args.data_file if args.data_file != "" else "None",
                 args.workers,
                 args.epochs,
                 args.batch_size,
