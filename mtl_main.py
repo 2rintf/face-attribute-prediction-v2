@@ -54,7 +54,7 @@ parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,
                     dest='weight_decay')
 parser.add_argument('-p', '--print-freq', default=10, type=int,
                     metavar='N', help='print frequency (default: 10)')
-parser.add_argument('--resume', default='', type=str, metavar='PATH',
+parser.add_argument('--resume', default='No', type=str, metavar='PATH',
                     help='path to latest checkpoint (default: none)')
 parser.add_argument('-e', '--evaluate', dest='evaluate', action='store_true',
                     help='evaluate model on validation set')
@@ -72,11 +72,20 @@ best_acc1 = 0
 def main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     args = parser.parse_args()
+    showParam(args)
+    exit()
+
     main_worker(args)
 
 
 def main_worker(args):
     
+    BATCH_SIZE = args.batch_size
+    EPOCHS = args.epochs
+    NUM_WORKERS = args.workers
+    DIR = args.data
+    LR = args.lr
+
     model = MultiTaskNetwork()
     
     if args.gpu is not None:
@@ -120,12 +129,11 @@ def main_worker(args):
             print("=> no checkpoint found at '{}'".format(args.resume))
 
     # Data Loading
-    data_DIR = args.data
     normalize = transforms.Normalize(mean=[0.5, 0.5, 0.5],
                                     std=[0.5, 0.5, 0.5])
 
     train_dataset = CelebA(
-        data_DIR,
+        DIR,
         '20_train_data.txt',
         transforms.Compose([
             transforms.RandomHorizontalFlip(),
@@ -135,10 +143,10 @@ def main_worker(args):
 
     train_loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=args.batch_size, shuffle=True,
-        num_workers=args., pin_memory=True)
+        num_workers=args.workers, pin_memory=True)
 
     val_dataset = CelebA(
-        data_DIR,
+        DIR,
         '20_val_data.txt',
         transforms.Compose([
             transforms.ToTensor(),
@@ -147,9 +155,9 @@ def main_worker(args):
     val_loader = torch.utils.data.DataLoader(
         val_dataset,
         batch_size=BATCH_SIZE, shuffle=False,
-        num_workers=4, pin_memory=True)
+        num_workers=NUM_WORKERS, pin_memory=True)
     test_dataset = CelebA(
-        ROOT_PATH,
+        DIR,
         '20_test_data.txt',
         transforms.Compose([
             transforms.ToTensor(),
@@ -158,17 +166,48 @@ def main_worker(args):
     test_loader = torch.utils.data.DataLoader(
         test_dataset,
         batch_size=BATCH_SIZE, shuffle=False,
-        num_workers=4, pin_memory=True)
+        num_workers=NUM_WORKERS, pin_memory=True)
+
 
 
 def criterion(y_pred, y_true, log_vars):
-    loss = 0
-    for i in range(len(y_pred)):
-    precision = torch.exp(-log_vars[i])
-    diff = (y_pred[i]-y_true[i])**2.
-    loss += torch.sum(precision * diff + log_vars[i], -1)
-    return torch.mean(loss)
+    '''
+    UNDONE
+    '''
+    pass
+    # loss = 0
+    # for i in range(len(y_pred)):
+    # precision = torch.exp(-log_vars[i])
+    # diff = (y_pred[i]-y_true[i])**2.
+    # loss += torch.sum(precision * diff + log_vars[i], -1)
+    # return torch.mean(loss)
 
+def showParam(args):
+    print("Input params: ")
+    print("\tDataset dir : %s \n \
+        Num workers : %d \n \
+        Epochs : %d \n \
+        Batch size : %d \n \
+        LR : %f \n \
+        Momentum(SGD) : %f \n \
+        Weight decay(AdamW): %f \n \
+        GPU : %d \n \
+        Evaluate Mode : %d \n \
+        Resume : %s \n \
+        Print freq : %d" % 
+            (
+                args.data,
+                args.workers,
+                args.epochs,
+                args.batch_size,
+                args.lr,
+                args.momentum,
+                args.weight_decay,
+                args.gpu if args.gpu != None else -1,
+                int(args.evaluate==True),
+                args.resume,
+                args.print_freq
+            ))
 
 if __name__ == '__main__':
     main()
