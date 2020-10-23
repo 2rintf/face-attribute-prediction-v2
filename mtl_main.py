@@ -181,6 +181,9 @@ def main_worker(args):
     for epoch in range(args.start_epoch, args.epochs):
         train(train_loader,model,criterion,optimizer,epoch,args)
 
+        scheduler.step()
+        print(scheduler.get_lr())
+
 
 
 
@@ -198,22 +201,51 @@ def train(train_loader,model,criterion,optimizer,epoch,args):
 
     model.train()
 
+    loss = []
     end = time.time()
     for i, (images, target) in enumerate(train_loader):
         # measure data loading time
         data_time.update(time.time() - end)
+        # attribute labels order by 8 subtasks.
+        targets = get_each_attr_label(target)
+        
+        targets = [t.type(torch.FloatTensor) for t in targets]
 
         if args.gpu is not None:
             images = images.cuda(args.gpu, non_blocking=True)
-            target = target.cuda(args.gpu, non_blocking=True)
+            # target = target.cuda(args.gpu, non_blocking=True)
+            targets = [t.cuda(args.gpu,non_blocking=True)]
+            
+
 
         # compute output
         hair,eyes,nose,cheek,mouth,chin,neck,holistic = model(images)
-        loss = criterion(output, target)
+
+        loss_1 = criterion(holistic,targets[0])
+        loss_2 = criterion(hair,targets[1])
+        loss_3 = criterion(eyes,targets[2])
+        loss_4 = criterion(nose,targets[3])
+        loss_5 = criterion(cheek,targets[4])
+        loss_6 = criterion(mouth,targets[5])
+        loss_7 = criterion(chin,targets[6])
+        loss_8 = criterion(neck,targets[7])
+        
+        total_loss = (loss_1+loss_2+loss_3+loss_4+loss_5+loss_6+loss_7+loss_8)/8.
+        
+        # loss = criterion(output, target)
+
+        torch.softmax()
 
         # measure accuracy and record loss
+        # TODO: new approach of calculating the accuracy. [Weighted Accuracy]
         acc1, acc5 = accuracy(output, target, topk=(1, 5))
-        losses.update(loss.item(), images.size(0))
+
+
+
+        losses.update(total_loss.item(), images.size(0))
+
+
+
         top1.update(acc1[0], images.size(0))
         top5.update(acc5[0], images.size(0))
 
@@ -246,7 +278,17 @@ def criterion(y_pred, y_true, log_vars):
     # return torch.mean(loss)
 
 def get_each_attr_label(target):
-    holistic_target = target[]
+    holistic_target = target[:,0:9]
+    hair_target = target[:,9:19]
+    eyes_target = target[:,19:24]
+    nose_target = target[:,24:26]
+    cheek_target = target[:,26:30]
+    mouth_target = target[:,30:35]
+    chin_target = target[:,35:38]
+    neck_target = target[:,38:40]
+    return holistic_target,hair_target,eyes_target,nose_target,
+            cheek_target,mouth_target,chin_target,neck_target
+
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""
