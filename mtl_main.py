@@ -234,11 +234,22 @@ def train(train_loader,model,criterion,optimizer,epoch,args):
         
         # loss = criterion(output, target)
 
-        torch.softmax()
+        # accuracy
+        # measure accuracy 
+        # new approach of calculating the accuracy. [Weighted Accuracy]
+        err_1 = sub_task_accuracy(torch.sigmoid(holistic),targets[0]) / args.batch_size * 1.0 / 9
+        err_2 = sub_task_accuracy(torch.sigmoid(hair),targets[1])/ args.batch_size * 1.0/ 10
+        err_3 = sub_task_accuracy(torch.sigmoid(eyes),targets[2])/ args.batch_size * 1.0/ 5
+        err_4 = sub_task_accuracy(torch.sigmoid(nose),targets[3])/ args.batch_size * 1.0/ 2
+        err_5 = sub_task_accuracy(torch.sigmoid(cheek),targets[4])/ args.batch_size * 1.0/ 4
+        err_6 = sub_task_accuracy(torch.sigmoid(mouth),targets[5])/ args.batch_size * 1.0/ 5
+        err_7 = sub_task_accuracy(torch.sigmoid(chin),targets[6])/ args.batch_size * 1.0/ 3
+        err_8 = sub_task_accuracy(torch.sigmoid(neck),targets[7])/ args.batch_size * 1.0/ 2
 
-        # measure accuracy and record loss
-        # TODO: new approach of calculating the accuracy. [Weighted Accuracy]
-        acc1, acc5 = accuracy(output, target, topk=(1, 5))
+        # TODO:record loss
+
+
+        # acc1, acc5 = accuracy(output, target, topk=(1, 5))
 
 
 
@@ -276,6 +287,27 @@ def criterion(y_pred, y_true, log_vars):
     # diff = (y_pred[i]-y_true[i])**2.
     # loss += torch.sum(precision * diff + log_vars[i], -1)
     # return torch.mean(loss)
+
+
+def sub_task_accuracy(model_pred,labels,threshold=0.6):
+    '''
+        Without test! 
+    '''
+    pred_result = model_pred > threshold
+    pred_result = pred_result.int()
+    label_temp = labels.int()
+    r,l = pred_result.size()
+    # print(pred_result.shape)
+    # print(labels.shape)
+    # 得到预测值与标签值不一致的类的个数
+    temp = pred_result^labels
+    error = temp[temp!=0]
+    error_num = len(error)
+    # error_rate = error_num*1.0/(r*l*1.0)
+    # # print(error_rate)
+    return  error_num
+
+
 
 def get_each_attr_label(target):
     holistic_target = target[:,0:9]
