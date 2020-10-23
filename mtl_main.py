@@ -139,8 +139,9 @@ def main_worker(args):
 
     train_dataset = CelebA(
         DIR,
-        '20_train_data.txt',
+        'train_part.txt',
         transforms.Compose([
+            transforms.Resize(224),
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
             normalize,
@@ -152,8 +153,9 @@ def main_worker(args):
 
     val_dataset = CelebA(
         DIR,
-        '20_val_data.txt',
+        'val_part.txt',
         transforms.Compose([
+            transforms.Resize(224),
             transforms.ToTensor(),
             normalize,
         ]))
@@ -163,8 +165,9 @@ def main_worker(args):
         num_workers=NUM_WORKERS, pin_memory=True)
     test_dataset = CelebA(
         DIR,
-        '20_test_data.txt',
+        'test_part.txt',
         transforms.Compose([
+            transforms.Resize(224),
             transforms.ToTensor(),
             normalize,
         ]))
