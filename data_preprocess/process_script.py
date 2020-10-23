@@ -8,6 +8,20 @@ import os.path
 
 raw_file = "/home/czd-2019/Projects/celebA_dataset/Anno/list_attr_celeba.txt"
 
+holistic = [3,11,14,19,21,26,27,32,40]
+hair = [5,6,9,10,12,18,29,33,34,36]
+eyes = [2,4,13,16,24]
+nose = [8,28]
+cheek = [20,30,31,35]
+mouth = [1,7,22,23,37]
+chin = [15,17,25]
+neck = [38,39]
+
+total_label = holistic+hair+eyes+nose+cheek+mouth+chin+neck
+print(total_label)
+
+
+
 train_img_list = []
 train_label_list = []
 
@@ -26,7 +40,9 @@ for line in open(raw_file,'r'):
     
     img_t = sample[0]
     # Change -1 to 0.
-    label_t = [1 if i==1 else 0 for i in sample[1:]]
+    label_t = [1 if int(i)==1 else 0 for i in sample[1:]]
+    # Change order of label.
+    label_t = [label_t[i-1] for i in total_label]
 
     if count <= 162770:
         train_img_list.append(img_t)
@@ -50,9 +66,10 @@ dic = {
     'test_part.txt':[test_img_list,test_label_list]
 }
 
+print(len(dic['train_part.txt'][0]))
 
 for fn in ['train_part.txt','val_part.txt','test_part.txt']:
-    file = open(fn,'w')
+    file = open(os.path.join("./data_preprocess",fn),'w')
     for img,label in zip(dic[fn][0],dic[fn][1]):
         label = [str(i) for i in label]
         file.write(img+" ")

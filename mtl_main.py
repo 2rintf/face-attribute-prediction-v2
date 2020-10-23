@@ -27,7 +27,7 @@ model_names = sorted(name for name in models.__dict__
     and callable(models.__dict__[name]))
 
 parser = argparse.ArgumentParser(description='czd\'s PyTorch Training')
-parser.add_argument('--data', metavar='DIR',
+parser.add_argument('--data', metavar='DIR',default='/home/czd-2019/Projects/celebA_dataset'
                     help='path to dataset')
 parser.add_argument('--data-file', metavar='N',default="",type=str,
                     help='path to dataset file(train_part.txt/val_par.txt/test_part.txt)')
@@ -66,8 +66,8 @@ parser.add_argument('--pretrained', dest='pretrained', action='store_true',
 
 parser.add_argument('--seed', default=None, type=int,
                     help='seed for initializing training. ')
-parser.add_argument('--gpu', default=None, type=int,
-                    help='GPU id to use.')
+parser.add_argument('--gpu', default=0, type=int,
+                    help='GPU id to use.(Default gpu-used)')
 
 
 best_acc1 = 0
@@ -107,13 +107,14 @@ def main_worker(args):
 
     optimizer1 = optim.Adam(model.parameters(), 
                             lr=args.lr,
-                            weight_decay=args.weight_decay)
+                            )
     optimizer2 = torch.optim.AdamW(model.parameters(),
                                     lr=args.lr,
                                     )
-    
-    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer2,
-                                                    [40],
+    optimizer = optimizer1
+
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,
+                                                    [30,60],
                                                     gamma=0.3)
 
     # optionally resume from a checkpoint
@@ -146,7 +147,6 @@ def main_worker(args):
             transforms.ToTensor(),
             normalize,
         ]))
-
     train_loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=args.batch_size, shuffle=True,
         num_workers=args.workers, pin_memory=True)
@@ -163,6 +163,7 @@ def main_worker(args):
         val_dataset,
         batch_size=BATCH_SIZE, shuffle=False,
         num_workers=NUM_WORKERS, pin_memory=True)
+
     test_dataset = CelebA(
         DIR,
         'test_part.txt',
@@ -177,6 +178,60 @@ def main_worker(args):
         num_workers=NUM_WORKERS, pin_memory=True)
 
 
+    for epoch in range(args.start_epoch, args.epochs):
+        train(train_loader,model,criterion,optimizer,epoch,args)
+
+
+
+
+
+def train(train_loader,model,criterion,optimizer,epoch,args):
+    batch_time = AverageMeter('Time', ':6.3f')
+    data_time = AverageMeter('Data', ':6.3f')
+    losses = AverageMeter('Loss', ':.4e')
+    top1 = AverageMeter('Acc@1', ':6.2f')
+    top5 = AverageMeter('Acc@5', ':6.2f')
+    progress = ProgressMeter(
+        len(train_loader),
+        [batch_time, data_time, losses, top1, top5],
+        prefix="Epoch: [{}]".format(epoch))
+
+    model.train()
+
+    end = time.time()
+    for i, (images, target) in enumerate(train_loader):
+        # measure data loading time
+        data_time.update(time.time() - end)
+
+        if args.gpu is not None:
+            images = images.cuda(args.gpu, non_blocking=True)
+            target = target.cuda(args.gpu, non_blocking=True)
+
+        # compute output
+        hair,eyes,nose,cheek,mouth,chin,neck,holistic = model(images)
+        loss = criterion(output, target)
+
+        # measure accuracy and record loss
+        acc1, acc5 = accuracy(output, target, topk=(1, 5))
+        losses.update(loss.item(), images.size(0))
+        top1.update(acc1[0], images.size(0))
+        top5.update(acc5[0], images.size(0))
+
+        # compute gradient and do SGD step
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        # measure elapsed time
+        batch_time.update(time.time() - end)
+        end = time.time()
+
+        if i % args.print_freq == 0:
+            progress.display(i)
+
+
+
+
 
 def criterion(y_pred, y_true, log_vars):
     '''
@@ -189,6 +244,50 @@ def criterion(y_pred, y_true, log_vars):
     # diff = (y_pred[i]-y_true[i])**2.
     # loss += torch.sum(precision * diff + log_vars[i], -1)
     # return torch.mean(loss)
+
+def get_each_attr_label(target):
+    holistic_target = target[]
+
+class AverageMeter(object):
+    """Computes and stores the average and current value"""
+    def __init__(self, name, fmt=':f'):
+        self.name = name
+        self.fmt = fmt
+        self.reset()
+
+    def reset(self):
+        self.val = 0
+        self.avg = 0
+        self.sum = 0
+        self.count = 0
+
+    def update(self, val, n=1):
+        self.val = val
+        self.sum += val * n
+        self.count += n
+        self.avg = self.sum / self.count
+
+    def __str__(self):
+        fmtstr = '{name} {val' + self.fmt + '} ({avg' + self.fmt + '})'
+        return fmtstr.format(**self.__dict__)
+
+
+class ProgressMeter(object):
+    def __init__(self, num_batches, meters, prefix=""):
+        self.batch_fmtstr = self._get_batch_fmtstr(num_batches)
+        self.meters = meters
+        self.prefix = prefix
+
+    def display(self, batch):
+        entries = [self.prefix + self.batch_fmtstr.format(batch)]
+        entries += [str(meter) for meter in self.meters]
+        print('\t'.join(entries))
+
+    def _get_batch_fmtstr(self, num_batches):
+        num_digits = len(str(num_batches // 1))
+        fmt = '{:' + str(num_digits) + 'd}'
+        return '[' + fmt + '/' + fmt.format(num_batches) + ']'
+
 
 def showParam(args):
     print("Input params: ")

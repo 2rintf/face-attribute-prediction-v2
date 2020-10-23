@@ -37,8 +37,8 @@ class CelebA(data.Dataset):
         
         for line in open(os.path.join(root, ann_file), 'r'):
             sample = line.split()
-            if len(sample) != 20:
-                raise(RuntimeError("# attributes must be 19"))
+            if len(sample) != 41:
+                raise(RuntimeError("# attributes must be 40"))
             images.append(sample[0])
             targets.append([int(i) for i in sample[1:]])
         self.images = [os.path.join(root, 'img_align_celeba', img) for img in images]

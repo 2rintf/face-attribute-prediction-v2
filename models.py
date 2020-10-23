@@ -71,7 +71,6 @@ Mouth(beard): 1/7/22/23/37  [5]
 Chin        : 15/17/25      [3]
 Neck        : 38/39         [2]     
 '''
-# todo: UNDONE
 class MultiTaskNetwork(nn.Module):
     '''
     Completed network.
