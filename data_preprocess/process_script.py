@@ -7,52 +7,59 @@ import os.path
 
 
 raw_file = "/home/czd-2019/Projects/celebA_dataset/Anno/list_attr_celeba.txt"
-# haircolor_attr =[9,10,12,18]
-# hair_attr = [5,6,29,33,34]
-# sex_attr = [21]
-# beard_attr=[17,23,25]
-# skin_attr = [27]
-# eye_attr = [2,4,13,16,24]
 
-# # [9, 10, 12, 18, 5, 6, 29, 33, 34, 21, 17, 23, 25, 27, 2, 4, 13, 16, 24]
-# total_label=haircolor_attr+hair_attr+sex_attr+beard_attr+skin_attr+eye_attr
+train_img_list = []
+train_label_list = []
 
+val_img_list = []
+val_label_list = []
 
-# file = open("./filter_celeba_data.txt",'w')
+test_img_list = []
+test_label_list = []
 
-filter_img_list = []
-filter_label_list = []
-
-count = 0
+count = 1
 for line in open(raw_file,'r'):
     sample = line.split()
     if len(sample)!=41:
-        print("File maybe errors. Not 40 attribute.")
+        print("Not sample line.")
         continue
+    
     img_t = sample[0]
-    label_t = [int(i) for i in sample[1:]]
-    for h in total_label:
-        # if label_t[h] == 1:
-        filter_img_list.append(img_t)
-        # 把label拿出来
-        label_t = [label_t[i-1] for i in total_label]
+    # Change -1 to 0.
+    label_t = [1 if i==1 else 0 for i in sample[1:]]
 
-        label_t = [1 if j == 1 else 0 for j in label_t]
+    if count <= 162770:
+        train_img_list.append(img_t)
+        train_label_list.append(label_t)
+    elif count>162770 and count <= 182637:
+        val_img_list.append(img_t)
+        val_label_list.append(label_t)
+    elif count>182637 and count <= 202599:
+        test_img_list.append(img_t)
+        test_label_list.append(label_t)
+    count+=1
 
-        filter_label_list.append(label_t)
-        break
+print(count)
+print(len(train_img_list))
+print(len(val_img_list))
+print(len(test_img_list))
+
+dic = {
+    'train_part.txt':[train_img_list,train_label_list],
+    'val_part.txt':[val_img_list,val_label_list],
+    'test_part.txt':[test_img_list,test_label_list]
+}
 
 
-print(len(filter_img_list))
-print(len(filter_label_list))
+for fn in ['train_part.txt','val_part.txt','test_part.txt']:
+    file = open(fn,'w')
+    for img,label in zip(dic[fn][0],dic[fn][1]):
+        label = [str(i) for i in label]
+        file.write(img+" ")
+        for l in label:
+            file.write(l+" ")
+        file.write("\n")
+    file.close()
 
-file = open("./data_list/write_use.txt",'w')
-for img,label in zip(filter_img_list,filter_label_list):
-    label = [str(i) for i in label]
-    file.write(img+" ")
-    for l in label:
-        file.write(l+" ")
-    file.write("\n")
+print('done.')
 
-
-file.close()
