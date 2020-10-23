@@ -76,7 +76,7 @@ def main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     args = parser.parse_args()
     showParam(args)
-    exit()
+    # exit()
 
     main_worker(args)
 
@@ -97,11 +97,12 @@ def main_worker(args):
         torch.cuda.set_device(args.gpu)
         model = model.cuda(args.gpu)
 
-    print(model)
+    # print(model)
 
+    exit()
     # Multi-label 选择使用BCE损失函数。注意pytorch的BCELoss要求:
-    # ① 必须经过sigmoid()
-    # ② label是FloatTensor
+    # ① label是FloatTensor
+    # ② BCEWithLogitsLoss = Sigmoid + BCELoss
     criterion = nn.BCEWithLogitsLoss().cuda(args.gpu)
 
     optimizer1 = optim.Adam(model.parameters(), 

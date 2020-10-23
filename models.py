@@ -26,7 +26,7 @@ class FeatureExtraction(nn.Module):
 
         self.resnet34 = models.resnet34()
         self.resnet34 = nn.Sequential(*list(self.resnet34.children())[:-1])
-        self.resnet34.cuda()
+        # self.resnet34.cuda()
     
     def forward(self,x):
         y = self.resnet34(x)
@@ -47,7 +47,7 @@ class SubTask(nn.Module):
             nn.Dropout(p=0.5),
             nn.Linear(128, output_dims),
         )
-        self.fc.cuda()
+        # self.fc.cuda()
 
     def forward(self,x):
         x = x.view(x.size(0), -1) 
