@@ -105,8 +105,13 @@ venv.bak/
 
 # checkpoints
 checkpoints/
+checkpoint/
 
 
 test_pic_cifar10/
 
 *.pth
+
+runs/
+
+cl_try.py

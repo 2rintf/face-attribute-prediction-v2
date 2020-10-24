@@ -18,6 +18,8 @@ import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import torchvision.models as models
 
+from torch.utils.tensorboard import SummaryWriter
+
 from celeba import CelebA
 from models import MultiTaskNetwork
 
@@ -27,25 +29,20 @@ model_names = sorted(name for name in models.__dict__
     and callable(models.__dict__[name]))
 
 parser = argparse.ArgumentParser(description='czd\'s PyTorch Training')
-parser.add_argument('--data', metavar='DIR',default='/home/czd-2019/Projects/celebA_dataset'
+parser.add_argument('--data', metavar='DIR',default='/home/czd-2019/Projects/celebA_dataset',
                     help='path to dataset')
-parser.add_argument('--data-file', metavar='N',default="",type=str,
+parser.add_argument('--data-file', metavar='N',default="/home/czd-2019/Projects/face-attribute-prediction-v2/data_preprocess",
+                    type=str,
                     help='path to dataset file(train_part.txt/val_par.txt/test_part.txt)')
-
-# parser.add_argument('-a', '--arch', metavar='ARCH', default='resnet18',
-#                     choices=model_names,
-#                     help='model architecture: ' +
-#                         ' | '.join(model_names) +
-#                         ' (default: resnet18)')
 parser.add_argument('-j', '--workers', default=8, type=int, metavar='N',
                     help='number of data loading workers (default: 4)')
 parser.add_argument('--epochs', default=90, type=int, metavar='N',
                     help='number of total epochs to run')
 parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
                     help='manual epoch number (useful on restarts)')
-parser.add_argument('-b', '--batch-size', default=256, type=int,
+parser.add_argument('-b', '--batch-size', default=128, type=int,
                     metavar='N',
-                    help='mini-batch size (default: 256), this is the total '
+                    help='mini-batch size (default: 128), this is the total '
                          'batch size of all GPUs on the current node when '
                          'using Data Parallel or Distributed Data Parallel')
 parser.add_argument('--lr', '--learning-rate', default=1e-3, type=float,
@@ -90,6 +87,7 @@ def main_worker(args):
     DATA_FILE_DIR = args.data_file
     LR = args.lr
 
+    
     model = MultiTaskNetwork()
     
     if args.gpu is not None:
@@ -99,7 +97,6 @@ def main_worker(args):
 
     # print(model)
 
-    exit()
     # Multi-label 选择使用BCE损失函数。注意pytorch的BCELoss要求:
     # ① label是FloatTensor
     # ② BCEWithLogitsLoss = Sigmoid + BCELoss
@@ -114,7 +111,7 @@ def main_worker(args):
     optimizer = optimizer1
 
     scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,
-                                                    [30,60],
+                                                    [30],
                                                     gamma=0.3)
 
     # optionally resume from a checkpoint
@@ -140,7 +137,7 @@ def main_worker(args):
 
     train_dataset = CelebA(
         DIR,
-        'train_part.txt',
+        os.path.join(DATA_FILE_DIR,'train_part.txt'),
         transforms.Compose([
             transforms.Resize(224),
             transforms.RandomHorizontalFlip(),
@@ -153,7 +150,7 @@ def main_worker(args):
 
     val_dataset = CelebA(
         DIR,
-        'val_part.txt',
+        os.path.join(DATA_FILE_DIR,'val_part.txt'),
         transforms.Compose([
             transforms.Resize(224),
             transforms.ToTensor(),
@@ -166,7 +163,7 @@ def main_worker(args):
 
     test_dataset = CelebA(
         DIR,
-        'test_part.txt',
+        os.path.join(DATA_FILE_DIR,'test_part.txt'),
         transforms.Compose([
             transforms.Resize(224),
             transforms.ToTensor(),
@@ -179,29 +176,49 @@ def main_worker(args):
 
 
     for epoch in range(args.start_epoch, args.epochs):
-        train(train_loader,model,criterion,optimizer,epoch,args)
+        total_loss = train(train_loader,model,criterion,optimizer,epoch,args)
 
         scheduler.step()
         print(scheduler.get_lr())
 
+        # save checkpoint
+        save_name = "checkpoint_epoch"+str(epoch+1)+".pth"
+        print("checkpoint. Save name:"+save_name)
+        torch.save({
+            'epoch': epoch,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'loss': total_loss,
+        }, "./checkpoint/"+save_name)
+
+    
 
 
 
 
 def train(train_loader,model,criterion,optimizer,epoch,args):
-    batch_time = AverageMeter('Time', ':6.3f')
-    data_time = AverageMeter('Data', ':6.3f')
-    losses = AverageMeter('Loss', ':.4e')
-    top1 = AverageMeter('Acc@1', ':6.2f')
-    top5 = AverageMeter('Acc@5', ':6.2f')
+    batch_time = AverageMeter('Time:', ':6.3f')
+    data_time = AverageMeter('Data:', ':6.3f')
+    losses = AverageMeter('Total Loss:', ':.4e')
+    losses_1 = AverageMeter('Loss1:', ':.4e')
+    losses_2 = AverageMeter('Loss2:', ':.4e')
+    losses_3= AverageMeter('Loss3:', ':.4e')
+    losses_4 = AverageMeter('Loss4:', ':.4e')
+    losses_5 = AverageMeter('Loss5:', ':.4e')
+    losses_6 = AverageMeter('Loss6:', ':.4e')
+    losses_7 = AverageMeter('Loss7:', ':.4e')
+    losses_8 = AverageMeter('Loss8:', ':.4e')
+
+    # top1 = AverageMeter('Acc@1', ':6.2f')
+    # top5 = AverageMeter('Acc@5', ':6.2f')
     progress = ProgressMeter(
         len(train_loader),
-        [batch_time, data_time, losses, top1, top5],
+        [batch_time, data_time, losses, losses_1,losses_2,losses_3,losses_4,losses_5,losses_6,losses_7,losses_8],
         prefix="Epoch: [{}]".format(epoch))
 
     model.train()
 
-    loss = []
+    # loss = []
     end = time.time()
     for i, (images, target) in enumerate(train_loader):
         # measure data loading time
@@ -214,9 +231,7 @@ def train(train_loader,model,criterion,optimizer,epoch,args):
         if args.gpu is not None:
             images = images.cuda(args.gpu, non_blocking=True)
             # target = target.cuda(args.gpu, non_blocking=True)
-            targets = [t.cuda(args.gpu,non_blocking=True)]
-            
-
+            targets = [t.cuda(args.gpu,non_blocking=True) for t in targets]
 
         # compute output
         hair,eyes,nose,cheek,mouth,chin,neck,holistic = model(images)
@@ -231,7 +246,10 @@ def train(train_loader,model,criterion,optimizer,epoch,args):
         loss_8 = criterion(neck,targets[7])
         
         total_loss = (loss_1+loss_2+loss_3+loss_4+loss_5+loss_6+loss_7+loss_8)/8.
+
         
+
+
         # loss = criterion(output, target)
 
         # accuracy
@@ -247,22 +265,48 @@ def train(train_loader,model,criterion,optimizer,epoch,args):
         err_8 = sub_task_accuracy(torch.sigmoid(neck),targets[7])/ args.batch_size * 1.0/ 2
 
         # TODO:record loss
+        losses_1.update(loss_1.item(),images.size(0))
+        losses_2.update(loss_2.item(),images.size(0))
+        losses_3.update(loss_3.item(),images.size(0))
+        losses_4.update(loss_4.item(),images.size(0))
+        losses_5.update(loss_5.item(),images.size(0))
+        losses_6.update(loss_6.item(),images.size(0))
+        losses_7.update(loss_7.item(),images.size(0))
+        losses_8.update(loss_8.item(),images.size(0))
 
 
         # acc1, acc5 = accuracy(output, target, topk=(1, 5))
-
-
-
         losses.update(total_loss.item(), images.size(0))
 
+        TB.add_scalar(
+            "Training loss",
+            total_loss.item(),
+            epoch*len(train_loader)+i
+        )
+        TB.add_scalars(
+            "Error Rate of Each Subtask",
+            {
+                'Holistic':err_1,
+                'Hair':err_2,
+                'Eyes':err_3,
+                'Nose':err_4,
+                'Cheek':err_5,
+                'Mouth':err_6,
+                'Chin':err_7,
+                'Neck':err_8
+            },
+            epoch*len(train_loader)+i
+        )
+
+        # TODO:record error rate.
 
 
-        top1.update(acc1[0], images.size(0))
-        top5.update(acc5[0], images.size(0))
+        # top1.update(acc1[0], images.size(0))
+        # top5.update(acc5[0], images.size(0))
 
         # compute gradient and do SGD step
         optimizer.zero_grad()
-        loss.backward()
+        total_loss.backward()
         optimizer.step()
 
         # measure elapsed time
@@ -271,6 +315,9 @@ def train(train_loader,model,criterion,optimizer,epoch,args):
 
         if i % args.print_freq == 0:
             progress.display(i)
+
+        # exit()
+    return total_loss
 
 
 
@@ -296,15 +343,16 @@ def sub_task_accuracy(model_pred,labels,threshold=0.6):
     pred_result = model_pred > threshold
     pred_result = pred_result.int()
     label_temp = labels.int()
-    r,l = pred_result.size()
+
     # print(pred_result.shape)
     # print(labels.shape)
     # 得到预测值与标签值不一致的类的个数
-    temp = pred_result^labels
+    temp = pred_result^label_temp
+    
     error = temp[temp!=0]
     error_num = len(error)
-    # error_rate = error_num*1.0/(r*l*1.0)
-    # # print(error_rate)
+    # print(pred_result.size(1))
+    # print(error_num*1.0/pred_result.size(0)/pred_result.size(1))
     return  error_num
 
 
@@ -318,8 +366,7 @@ def get_each_attr_label(target):
     mouth_target = target[:,30:35]
     chin_target = target[:,35:38]
     neck_target = target[:,38:40]
-    return holistic_target,hair_target,eyes_target,nose_target,
-            cheek_target,mouth_target,chin_target,neck_target
+    return holistic_target,hair_target,eyes_target,nose_target,cheek_target,mouth_target,chin_target,neck_target
 
 
 class AverageMeter(object):
@@ -342,7 +389,7 @@ class AverageMeter(object):
         self.avg = self.sum / self.count
 
     def __str__(self):
-        fmtstr = '{name} {val' + self.fmt + '} ({avg' + self.fmt + '})'
+        fmtstr = '{name} {val' + self.fmt + '}({avg' + self.fmt + '})'
         return fmtstr.format(**self.__dict__)
 
 
@@ -365,7 +412,7 @@ class ProgressMeter(object):
 
 def showParam(args):
     print("Input params: ")
-    print("\tDataset dir : %s \n \
+    print("Dataset dir : %s \n \
         Dataset file dir : %s \n \
         Num workers : %d \n \
         Epochs : %d \n \
@@ -393,4 +440,5 @@ def showParam(args):
             ))
 
 if __name__ == '__main__':
+    TB = SummaryWriter()
     main()
