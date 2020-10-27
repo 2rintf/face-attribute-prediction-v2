@@ -108,7 +108,7 @@ def main_worker(args):
     optimizer2 = torch.optim.AdamW(model.parameters(),
                                     lr=args.lr,
                                     )
-    optimizer = optimizer1
+    optimizer = optimizer2
 
     scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,
                                                     [30],
@@ -120,12 +120,12 @@ def main_worker(args):
             print("=> loading checkpoint '{}'".format(args.resume))
             checkpoint = torch.load(args.resume)
             args.start_epoch = checkpoint['epoch']
-            best_acc1 = checkpoint['best_acc1']
-            if args.gpu is not None:
-                # best_acc1 may be from a checkpoint from a different GPU
-                best_acc1 = best_acc1.to(args.gpu)
-            model.load_state_dict(checkpoint['state_dict'])
-            optimizer.load_state_dict(checkpoint['optimizer'])
+            # best_acc1 = checkpoint['best_acc1']
+            # if args.gpu is not None:
+            #     # best_acc1 may be from a checkpoint from a different GPU
+            #     best_acc1 = best_acc1.to(args.gpu)
+            model.load_state_dict(checkpoint['model_state_dict'])
+            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
             print("=> loaded checkpoint '{}' (epoch {})"
                   .format(args.resume, checkpoint['epoch']))
         else:
@@ -173,6 +173,11 @@ def main_worker(args):
         test_dataset,
         batch_size=BATCH_SIZE, shuffle=False,
         num_workers=NUM_WORKERS, pin_memory=True)
+
+    
+    if args.evaluate:
+        validate(val_loader, model, criterion, args)
+        return
 
 
     for epoch in range(args.start_epoch, args.epochs):
@@ -300,7 +305,6 @@ def train(train_loader,model,criterion,optimizer,epoch,args):
 
         # TODO:record error rate.
 
-
         # top1.update(acc1[0], images.size(0))
         # top5.update(acc5[0], images.size(0))
 
@@ -319,7 +323,117 @@ def train(train_loader,model,criterion,optimizer,epoch,args):
         # exit()
     return total_loss
 
+def validate(val_loader, model, criterion, args):
+    batch_time = AverageMeter('Time', ':6.3f')
+    losses = AverageMeter('Total Loss:', ':.4e')
+    # losses_1 = AverageMeter('Loss1:', ':.4e')
+    # losses_2 = AverageMeter('Loss2:', ':.4e')
+    # losses_3= AverageMeter('Loss3:', ':.4e')
+    # losses_4 = AverageMeter('Loss4:', ':.4e')
+    # losses_5 = AverageMeter('Loss5:', ':.4e')
+    # losses_6 = AverageMeter('Loss6:', ':.4e')
+    # losses_7 = AverageMeter('Loss7:', ':.4e')
+    # losses_8 = AverageMeter('Loss8:', ':.4e')
 
+    errs_1 = AverageMeter('Err1:',':4e')
+    errs_2 = AverageMeter('Err2:',':4e')
+    errs_3 = AverageMeter('Err3:',':4e')
+    errs_4 = AverageMeter('Err4:',':4e')
+    errs_5 = AverageMeter('Err5:',':4e')
+    errs_6 = AverageMeter('Err6:',':4e')
+    errs_7 = AverageMeter('Err7:',':4e')
+    errs_8 = AverageMeter('Err8:',':4e')
+    
+
+
+    # top1 = AverageMeter('Acc@1', ':6.2f')
+    # top5 = AverageMeter('Acc@5', ':6.2f')
+    progress = ProgressMeter(
+        len(val_loader),
+        [batch_time, data_time, losses, err_1,err_2,err_3,err_4,err_5,err_6,err_7,err_8],
+        prefix='Test: ')
+
+    # switch to evaluate mode
+    model.eval()
+
+    with torch.no_grad():
+        end = time.time()
+        for i, (images, target) in enumerate(val_loader):
+
+            targets = get_each_attr_label(target)
+        
+            targets = [t.type(torch.FloatTensor) for t in targets]
+
+            if args.gpu is not None:
+                images = images.cuda(args.gpu, non_blocking=True)
+                # target = target.cuda(args.gpu, non_blocking=True)
+                targets = [t.cuda(args.gpu,non_blocking=True) for t in targets]
+
+            # compute output
+            # output = model(images)
+            # loss = criterion(output, target)
+
+            hair,eyes,nose,cheek,mouth,chin,neck,holistic = model(images)
+
+            loss_1 = criterion(holistic,targets[0])
+            loss_2 = criterion(hair,targets[1])
+            loss_3 = criterion(eyes,targets[2])
+            loss_4 = criterion(nose,targets[3])
+            loss_5 = criterion(cheek,targets[4])
+            loss_6 = criterion(mouth,targets[5])
+            loss_7 = criterion(chin,targets[6])
+            loss_8 = criterion(neck,targets[7])
+
+            total_loss = (loss_1+loss_2+loss_3+loss_4+loss_5+loss_6+loss_7+loss_8)/8.
+
+            err_1 = sub_task_accuracy(torch.sigmoid(holistic),targets[0]) / args.batch_size * 1.0 / 9
+            err_2 = sub_task_accuracy(torch.sigmoid(hair),targets[1])/ args.batch_size * 1.0/ 10
+            err_3 = sub_task_accuracy(torch.sigmoid(eyes),targets[2])/ args.batch_size * 1.0/ 5
+            err_4 = sub_task_accuracy(torch.sigmoid(nose),targets[3])/ args.batch_size * 1.0/ 2
+            err_5 = sub_task_accuracy(torch.sigmoid(cheek),targets[4])/ args.batch_size * 1.0/ 4
+            err_6 = sub_task_accuracy(torch.sigmoid(mouth),targets[5])/ args.batch_size * 1.0/ 5
+            err_7 = sub_task_accuracy(torch.sigmoid(chin),targets[6])/ args.batch_size * 1.0/ 3
+            err_8 = sub_task_accuracy(torch.sigmoid(neck),targets[7])/ args.batch_size * 1.0/ 2
+
+            
+            
+            # measure accuracy and record loss
+            acc1, acc5 = accuracy(output, target, topk=(1, 5))
+            losses.update(total_loss.item(), images.size(0))
+
+            errs_1.update(err_1,images.size(0))
+            errs_2.update(err_2,images.size(0))
+            errs_3.update(err_3,images.size(0))
+            errs_4.update(err_4,images.size(0))
+            errs_5.update(err_5,images.size(0))
+            errs_6.update(err_6,images.size(0))
+            errs_7.update(err_7,images.size(0))
+            errs_8.update(err_8,images.size(0))
+
+            # measure elapsed time
+            batch_time.update(time.time() - end)
+            end = time.time()
+
+            if i % args.print_freq == 0:
+                progress.display(i)
+
+        # TODO: this should also be done with the ProgressMeter
+        print(' * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}'
+              .format(top1=top1, top5=top5))
+
+        print('[FINAL] Err1:{err1.avg:.3f} \n Err2:{err2.avg:.3f} \n \
+                Err3:{err3.avg:.3f} \n Err4:{err4.avg:.3f} \n Err5:{err5.avg:.3f} \n \
+                Err6:{err6.avg:.3f} \n Err7:{err7.avg:.3f} \n Err8:{err8.avg:.3f}'
+                .format(err1=errs_1,
+                        err2=errs_2,
+                        err3=errs_3,
+                        err4=errs_4,
+                        err5=errs_5,
+                        err6=errs_6,
+                        err7=errs_7,
+                        err8=errs_8,))
+
+    return -1
 
 
 
