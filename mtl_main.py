@@ -350,7 +350,7 @@ def validate(val_loader, model, criterion, args):
     # top5 = AverageMeter('Acc@5', ':6.2f')
     progress = ProgressMeter(
         len(val_loader),
-        [batch_time, data_time, losses, err_1,err_2,err_3,err_4,err_5,err_6,err_7,err_8],
+        [batch_time,losses, errs_1,errs_2,errs_3,errs_4,errs_5,errs_6,errs_7,errs_8],
         prefix='Test: ')
 
     # switch to evaluate mode
@@ -398,17 +398,17 @@ def validate(val_loader, model, criterion, args):
             
             
             # measure accuracy and record loss
-            acc1, acc5 = accuracy(output, target, topk=(1, 5))
+            # acc1, acc5 = accuracy(output, target, topk=(1, 5))
             losses.update(total_loss.item(), images.size(0))
 
-            errs_1.update(err_1,images.size(0))
-            errs_2.update(err_2,images.size(0))
-            errs_3.update(err_3,images.size(0))
-            errs_4.update(err_4,images.size(0))
-            errs_5.update(err_5,images.size(0))
-            errs_6.update(err_6,images.size(0))
-            errs_7.update(err_7,images.size(0))
-            errs_8.update(err_8,images.size(0))
+            errs_1.update(err_1)
+            errs_2.update(err_2)
+            errs_3.update(err_3)
+            errs_4.update(err_4)
+            errs_5.update(err_5)
+            errs_6.update(err_6)
+            errs_7.update(err_7)
+            errs_8.update(err_8)
 
             # measure elapsed time
             batch_time.update(time.time() - end)
@@ -418,12 +418,11 @@ def validate(val_loader, model, criterion, args):
                 progress.display(i)
 
         # TODO: this should also be done with the ProgressMeter
-        print(' * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}'
-              .format(top1=top1, top5=top5))
+        # print(' * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}'
+        #       .format(top1=top1, top5=top5))
 
-        print('[FINAL] Err1:{err1.avg:.3f} \n Err2:{err2.avg:.3f} \n \
-                Err3:{err3.avg:.3f} \n Err4:{err4.avg:.3f} \n Err5:{err5.avg:.3f} \n \
-                Err6:{err6.avg:.3f} \n Err7:{err7.avg:.3f} \n Err8:{err8.avg:.3f}'
+        print('[FINAL] Err1:{err1.avg:.3f}  Err2:{err2.avg:.3f}  \
+Err3:{err3.avg:.3f}  Err4:{err4.avg:.3f}  Err5:{err5.avg:.3f}  Err6:{err6.avg:.3f}  Err7:{err7.avg:.3f}  Err8:{err8.avg:.3f}'
                 .format(err1=errs_1,
                         err2=errs_2,
                         err3=errs_3,
@@ -431,7 +430,7 @@ def validate(val_loader, model, criterion, args):
                         err5=errs_5,
                         err6=errs_6,
                         err7=errs_7,
-                        err8=errs_8,))
+                        err8=errs_8))
 
     return -1
 
@@ -452,7 +451,7 @@ def criterion(y_pred, y_true, log_vars):
 
 def sub_task_accuracy(model_pred,labels,threshold=0.6):
     '''
-        Without test! 
+        Return the num of error prediction.
     '''
     pred_result = model_pred > threshold
     pred_result = pred_result.int()
@@ -523,10 +522,9 @@ class ProgressMeter(object):
         fmt = '{:' + str(num_digits) + 'd}'
         return '[' + fmt + '/' + fmt.format(num_batches) + ']'
 
-
 def showParam(args):
     print("Input params: ")
-    print("Dataset dir : %s \n \
+    print("\tDataset dir : %s \n \
         Dataset file dir : %s \n \
         Num workers : %d \n \
         Epochs : %d \n \
@@ -537,7 +535,7 @@ def showParam(args):
         GPU : %d \n \
         Evaluate Mode : %d \n \
         Resume : %s \n \
-        Print freq : %d" % 
+        Print freq : %d "% 
             (
                 args.data,
                 args.data_file if args.data_file != "" else "None",
