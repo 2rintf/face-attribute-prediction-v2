@@ -260,14 +260,14 @@ def train(train_loader,model,criterion,optimizer,epoch,args):
         # accuracy
         # measure accuracy 
         # new approach of calculating the accuracy. [Weighted Accuracy]
-        err_1 = sub_task_accuracy(torch.sigmoid(holistic),targets[0]) / args.batch_size * 1.0 / 9
-        err_2 = sub_task_accuracy(torch.sigmoid(hair),targets[1])/ args.batch_size * 1.0/ 10
-        err_3 = sub_task_accuracy(torch.sigmoid(eyes),targets[2])/ args.batch_size * 1.0/ 5
-        err_4 = sub_task_accuracy(torch.sigmoid(nose),targets[3])/ args.batch_size * 1.0/ 2
-        err_5 = sub_task_accuracy(torch.sigmoid(cheek),targets[4])/ args.batch_size * 1.0/ 4
-        err_6 = sub_task_accuracy(torch.sigmoid(mouth),targets[5])/ args.batch_size * 1.0/ 5
-        err_7 = sub_task_accuracy(torch.sigmoid(chin),targets[6])/ args.batch_size * 1.0/ 3
-        err_8 = sub_task_accuracy(torch.sigmoid(neck),targets[7])/ args.batch_size * 1.0/ 2
+        err_1 = 1 - sub_task_accuracy(torch.sigmoid(holistic),targets[0]) 
+        err_2 = 1 - sub_task_accuracy(torch.sigmoid(hair),targets[1])
+        err_3 = 1 - sub_task_accuracy(torch.sigmoid(eyes),targets[2])
+        err_4 = 1 - sub_task_accuracy(torch.sigmoid(nose),targets[3])
+        err_5 = 1 - sub_task_accuracy(torch.sigmoid(cheek),targets[4])
+        err_6 = 1 - sub_task_accuracy(torch.sigmoid(mouth),targets[5])
+        err_7 = 1 - sub_task_accuracy(torch.sigmoid(chin),targets[6])
+        err_8 = 1 - sub_task_accuracy(torch.sigmoid(neck),targets[7])
 
         # TODO:record loss
         losses_1.update(loss_1.item(),images.size(0))
@@ -386,16 +386,29 @@ def validate(val_loader, model, criterion, args):
 
             total_loss = (loss_1+loss_2+loss_3+loss_4+loss_5+loss_6+loss_7+loss_8)/8.
 
-            err_1 = sub_task_accuracy(torch.sigmoid(holistic),targets[0]) / args.batch_size * 1.0 / 9
-            err_2 = sub_task_accuracy(torch.sigmoid(hair),targets[1])/ args.batch_size * 1.0/ 10
-            err_3 = sub_task_accuracy(torch.sigmoid(eyes),targets[2])/ args.batch_size * 1.0/ 5
-            err_4 = sub_task_accuracy(torch.sigmoid(nose),targets[3])/ args.batch_size * 1.0/ 2
-            err_5 = sub_task_accuracy(torch.sigmoid(cheek),targets[4])/ args.batch_size * 1.0/ 4
-            err_6 = sub_task_accuracy(torch.sigmoid(mouth),targets[5])/ args.batch_size * 1.0/ 5
-            err_7 = sub_task_accuracy(torch.sigmoid(chin),targets[6])/ args.batch_size * 1.0/ 3
-            err_8 = sub_task_accuracy(torch.sigmoid(neck),targets[7])/ args.batch_size * 1.0/ 2
+            err_1 = 1 - sub_task_accuracy(torch.sigmoid(holistic),targets[0])
+            err_2 = 1 - sub_task_accuracy(torch.sigmoid(hair),targets[1])
+            err_3 = 1 - sub_task_accuracy(torch.sigmoid(eyes),targets[2])
+            err_4 = 1 - sub_task_accuracy(torch.sigmoid(nose),targets[3])
+            err_5 = 1 - sub_task_accuracy(torch.sigmoid(cheek),targets[4])
+            err_6 = 1 - sub_task_accuracy(torch.sigmoid(mouth),targets[5])
+            err_7 = 1 - sub_task_accuracy(torch.sigmoid(chin),targets[6])
+            err_8 = 1 - sub_task_accuracy(torch.sigmoid(neck),targets[7])
 
-            
+
+            print(err_1)
+            print(err_2)
+            print(err_3)
+            print(err_4)
+            print(err_5)
+            print(err_6)
+            print(err_7)
+            print(err_8)
+
+            exit()
+
+
+
             
             # measure accuracy and record loss
             # acc1, acc5 = accuracy(output, target, topk=(1, 5))
@@ -451,22 +464,22 @@ def criterion(y_pred, y_true, log_vars):
 
 def sub_task_accuracy(model_pred,labels,threshold=0.6):
     '''
-        Return the num of error prediction.
+        Return accuracy.
     '''
     pred_result = model_pred > threshold
-    pred_result = pred_result.int()
-    label_temp = labels.int()
+    # pred_result = pred_result.int()
+    # label_temp = labels.int()
 
-    # print(pred_result.shape)
-    # print(labels.shape)
-    # 得到预测值与标签值不一致的类的个数
-    temp = pred_result^label_temp
-    
-    error = temp[temp!=0]
-    error_num = len(error)
-    # print(pred_result.size(1))
-    # print(error_num*1.0/pred_result.size(0)/pred_result.size(1))
-    return  error_num
+    pred_result = pred_result>0
+    label_temp = labels>0
+
+    acc_mat = (pred_result.eq(label_temp)).data.cpu().sum(1).type(torch.FloatTensor)
+
+    acc = torch.mean(acc_mat/labels.size(1))
+
+    # print(labels.size(1))
+    # print(acc)
+    return  acc
 
 
 
