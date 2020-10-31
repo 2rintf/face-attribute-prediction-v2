@@ -35,7 +35,7 @@ parser.add_argument('--data-file', metavar='N',default="/home/czd-2019/Projects/
                     type=str,
                     help='path to dataset file(train_part.txt/val_par.txt/test_part.txt)')
 parser.add_argument('-j', '--workers', default=8, type=int, metavar='N',
-                    help='number of data loading workers (default: 4)')
+                    help='number of data loading workers (default: 8)')
 parser.add_argument('--epochs', default=90, type=int, metavar='N',
                     help='number of total epochs to run')
 parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
@@ -241,6 +241,9 @@ def train(train_loader,model,criterion,optimizer,epoch,args):
         # compute output
         hair,eyes,nose,cheek,mouth,chin,neck,holistic = model(images)
 
+        print(targets[0].size())
+        print(holistic.size())
+
         loss_1 = criterion(holistic,targets[0])
         loss_2 = criterion(hair,targets[1])
         loss_3 = criterion(eyes,targets[2])
@@ -268,6 +271,8 @@ def train(train_loader,model,criterion,optimizer,epoch,args):
         err_6 = 1 - sub_task_accuracy(torch.sigmoid(mouth),targets[5])
         err_7 = 1 - sub_task_accuracy(torch.sigmoid(chin),targets[6])
         err_8 = 1 - sub_task_accuracy(torch.sigmoid(neck),targets[7])
+
+        exit()
 
         # TODO:record loss
         losses_1.update(loss_1.item(),images.size(0))
@@ -395,16 +400,6 @@ def validate(val_loader, model, criterion, args):
             err_7 = 1 - sub_task_accuracy(torch.sigmoid(chin),targets[6])
             err_8 = 1 - sub_task_accuracy(torch.sigmoid(neck),targets[7])
 
-
-            print(err_1)
-            print(err_2)
-            print(err_3)
-            print(err_4)
-            print(err_5)
-            print(err_6)
-            print(err_7)
-            print(err_8)
-
             exit()
 
 
@@ -462,15 +457,18 @@ def criterion(y_pred, y_true, log_vars):
     # return torch.mean(loss)
 
 
-def sub_task_accuracy(model_pred,labels,threshold=0.6):
+def sub_task_accuracy(model_pred,labels,threshold=0.8):
     '''
         Return accuracy.
     '''
+    print(model_pred[0:3,:])
     pred_result = model_pred > threshold
     # pred_result = pred_result.int()
     # label_temp = labels.int()
+    print(pred_result[0:3,:])
 
     pred_result = pred_result>0
+    print(pred_result[0:3,:])
     label_temp = labels>0
 
     acc_mat = (pred_result.eq(label_temp)).data.cpu().sum(1).type(torch.FloatTensor)
