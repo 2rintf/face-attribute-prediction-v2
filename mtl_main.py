@@ -198,9 +198,6 @@ def main_worker(args):
 
     
 
-
-
-
 def train(train_loader,model,criterion,optimizer,epoch,args):
     batch_time = AverageMeter('Time:', ':6.3f')
     data_time = AverageMeter('Data:', ':6.3f')
@@ -271,8 +268,6 @@ def train(train_loader,model,criterion,optimizer,epoch,args):
         err_6 = 1 - sub_task_accuracy(torch.sigmoid(mouth),targets[5])
         err_7 = 1 - sub_task_accuracy(torch.sigmoid(chin),targets[6])
         err_8 = 1 - sub_task_accuracy(torch.sigmoid(neck),targets[7])
-
-        exit()
 
         # TODO:record loss
         losses_1.update(loss_1.item(),images.size(0))
@@ -400,9 +395,6 @@ def validate(val_loader, model, criterion, args):
             err_7 = 1 - sub_task_accuracy(torch.sigmoid(chin),targets[6])
             err_8 = 1 - sub_task_accuracy(torch.sigmoid(neck),targets[7])
 
-            exit()
-
-
 
             
             # measure accuracy and record loss
@@ -463,20 +455,11 @@ def sub_task_accuracy(model_pred,labels,threshold=0.8):
     '''
     print(model_pred[0:3,:])
     pred_result = model_pred > threshold
-    # pred_result = pred_result.int()
-    # label_temp = labels.int()
-    print(pred_result[0:3,:])
-
-    pred_result = pred_result>0
-    print(pred_result[0:3,:])
     label_temp = labels>0
 
     acc_mat = (pred_result.eq(label_temp)).data.cpu().sum(1).type(torch.FloatTensor)
-
     acc = torch.mean(acc_mat/labels.size(1))
 
-    # print(labels.size(1))
-    # print(acc)
     return  acc
 
 
