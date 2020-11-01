@@ -75,10 +75,11 @@ class MultiTaskNetwork(nn.Module):
     '''
     Completed network.
     '''
-    def __init__(self):
+    def __init__(self,isPretrained=True):
         super(MultiTaskNetwork,self).__init__()
         self.FeatureExtraction = FeatureExtraction()
-        init_pretrained_weights(self.FeatureExtraction,model_pretrained_path['resnet34'])
+        if isPretrained:
+            init_pretrained_weights(self.FeatureExtraction,model_pretrained_path['resnet34'])
         
         self.HairPart = SubTask(10)
         self.EyesPart = SubTask(5)

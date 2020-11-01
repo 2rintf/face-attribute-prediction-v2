@@ -88,7 +88,7 @@ def main_worker(args):
     LR = args.lr
 
     
-    model = MultiTaskNetwork()
+    model = MultiTaskNetwork(isPretrained=args.pretrained)
     
     if args.gpu is not None:
         print("Use GPU: {} for training".format(args.gpu))
@@ -238,8 +238,6 @@ def train(train_loader,model,criterion,optimizer,epoch,args):
         # compute output
         hair,eyes,nose,cheek,mouth,chin,neck,holistic = model(images)
 
-        print(targets[0].size())
-        print(holistic.size())
 
         loss_1 = criterion(holistic,targets[0])
         loss_2 = criterion(hair,targets[1])
@@ -302,11 +300,6 @@ def train(train_loader,model,criterion,optimizer,epoch,args):
             },
             epoch*len(train_loader)+i
         )
-
-        # TODO:record error rate.
-
-        # top1.update(acc1[0], images.size(0))
-        # top5.update(acc5[0], images.size(0))
 
         # compute gradient and do SGD step
         optimizer.zero_grad()
@@ -416,14 +409,13 @@ def validate(val_loader, model, criterion, args):
 
             if i % args.print_freq == 0:
                 progress.display(i)
-
-        # TODO: this should also be done with the ProgressMeter
-        # print(' * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}'
-        #       .format(top1=top1, top5=top5))
-
-        print('[FINAL] Err1:{err1.avg:.3f}  Err2:{err2.avg:.3f}  \
+        avg_err = (errs_1.avg+errs_2.avg+errs_3.avg
+                    +errs_4.avg+errs_5.avg+errs_6.avg
+                    +errs_7.avg+errs_8.avg)/8
+        print('[FINAL] Avg_Err:{avg_err:.3f}  Err1:{err1.avg:.3f}  Err2:{err2.avg:.3f}  \
 Err3:{err3.avg:.3f}  Err4:{err4.avg:.3f}  Err5:{err5.avg:.3f}  Err6:{err6.avg:.3f}  Err7:{err7.avg:.3f}  Err8:{err8.avg:.3f}'
-                .format(err1=errs_1,
+                .format(avg_err=avg_err,
+                        err1=errs_1,
                         err2=errs_2,
                         err3=errs_3,
                         err4=errs_4,
@@ -453,7 +445,6 @@ def sub_task_accuracy(model_pred,labels,threshold=0.8):
     '''
         Return accuracy.
     '''
-    print(model_pred[0:3,:])
     pred_result = model_pred > threshold
     label_temp = labels>0
 
@@ -527,6 +518,7 @@ def showParam(args):
         Momentum(SGD) : %f \n \
         Weight decay(AdamW): %f \n \
         GPU : %d \n \
+        Pretrained weight: %d \n \
         Evaluate Mode : %d \n \
         Resume : %s \n \
         Print freq : %d "% 
@@ -540,6 +532,7 @@ def showParam(args):
                 args.momentum,
                 args.weight_decay,
                 args.gpu if args.gpu != None else -1,
+                int(args.pretrained==True),
                 int(args.evaluate==True),
                 args.resume,
                 args.print_freq
