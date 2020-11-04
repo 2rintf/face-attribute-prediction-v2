@@ -58,6 +58,9 @@ parser.add_argument('--resume', default='No', type=str, metavar='PATH',
                     help='path to latest checkpoint (default: none)')
 parser.add_argument('-e', '--evaluate', dest='evaluate', action='store_true',
                     help='evaluate model on validation set')
+parser.add_argument('-t', '--test', dest='test', action='store_true',
+                    help='evaluate model on test set')
+
 parser.add_argument('--pretrained', dest='pretrained', action='store_true',
                     help='use pre-trained model')
 
@@ -69,9 +72,10 @@ parser.add_argument('--gpu', default=0, type=int,
 
 best_acc1 = 0
 
-def main():
+def main(args):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    args = parser.parse_args()
+    # args = parser.parse_args()
+
     showParam(args)
     # exit()
 
@@ -79,7 +83,8 @@ def main():
 
 
 def main_worker(args):
-    
+    global best_acc1
+
     BATCH_SIZE = args.batch_size
     EPOCHS = args.epochs
     NUM_WORKERS = args.workers
@@ -178,6 +183,10 @@ def main_worker(args):
     if args.evaluate:
         validate(val_loader, model, criterion, args)
         return
+    
+    if args.test:
+        test(test_loader, model, criterion, args)
+        return
 
 
     for epoch in range(args.start_epoch, args.epochs):
@@ -185,6 +194,11 @@ def main_worker(args):
 
         scheduler.step()
         print(scheduler.get_lr())
+
+        val_acc = validate(val_loader,model,criterion,args)
+
+        is_best = val_acc > best_acc1
+        best_acc1 = max(val_acc, best_acc1)
 
         # save checkpoint
         save_name = "checkpoint_epoch"+str(epoch+1)+".pth"
@@ -194,7 +208,11 @@ def main_worker(args):
             'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
             'loss': total_loss,
+            'val_acc':val_acc,
+            'best_acc':best_acc1
         }, "./checkpoint/"+save_name)
+
+        exit()
 
     
 
@@ -280,6 +298,7 @@ def train(train_loader,model,criterion,optimizer,epoch,args):
 
         # acc1, acc5 = accuracy(output, target, topk=(1, 5))
         losses.update(total_loss.item(), images.size(0))
+
 
         TB.add_scalar(
             "Training loss",
@@ -412,7 +431,7 @@ def validate(val_loader, model, criterion, args):
         avg_err = (errs_1.avg+errs_2.avg+errs_3.avg
                     +errs_4.avg+errs_5.avg+errs_6.avg
                     +errs_7.avg+errs_8.avg)/8
-        print('[FINAL] Avg_Err:{avg_err:.3f}  Err1:{err1.avg:.3f}  Err2:{err2.avg:.3f}  \
+        print('[VAL RESULT] Avg_Err:{avg_err:.3f}  Err1:{err1.avg:.3f}  Err2:{err2.avg:.3f}  \
 Err3:{err3.avg:.3f}  Err4:{err4.avg:.3f}  Err5:{err5.avg:.3f}  Err6:{err6.avg:.3f}  Err7:{err7.avg:.3f}  Err8:{err8.avg:.3f}'
                 .format(avg_err=avg_err,
                         err1=errs_1,
@@ -424,9 +443,11 @@ Err3:{err3.avg:.3f}  Err4:{err4.avg:.3f}  Err5:{err5.avg:.3f}  Err6:{err6.avg:.3
                         err7=errs_7,
                         err8=errs_8))
 
-    return -1
+    return avg_err
 
 
+def test(test_loader,model,criterion,args):
+    pass
 
 def criterion(y_pred, y_true, log_vars):
     '''
@@ -539,5 +560,9 @@ def showParam(args):
             ))
 
 if __name__ == '__main__':
-    TB = SummaryWriter()
-    main()
+    args = parser.parse_args()
+    TB = None
+    if not (args.evaluate and args.test):
+        TB = SummaryWriter()
+        print("Start tensorboard.")
+    main(args)
