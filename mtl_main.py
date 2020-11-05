@@ -77,7 +77,6 @@ def main(args):
     # args = parser.parse_args()
 
     showParam(args)
-    # exit()
 
     main_worker(args)
 
@@ -212,7 +211,6 @@ def main_worker(args):
             'best_acc':best_acc1
         }, "./checkpoint/"+save_name)
 
-        exit()
 
     
 
@@ -268,14 +266,7 @@ def train(train_loader,model,criterion,optimizer,epoch,args):
         
         total_loss = (loss_1+loss_2+loss_3+loss_4+loss_5+loss_6+loss_7+loss_8)/8.
 
-        
-
-
-        # loss = criterion(output, target)
-
         # accuracy
-        # measure accuracy 
-        # new approach of calculating the accuracy. [Weighted Accuracy]
         err_1 = 1 - sub_task_accuracy(torch.sigmoid(holistic),targets[0]) 
         err_2 = 1 - sub_task_accuracy(torch.sigmoid(hair),targets[1])
         err_3 = 1 - sub_task_accuracy(torch.sigmoid(eyes),targets[2])
