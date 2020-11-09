@@ -127,11 +127,19 @@ def main_worker(args):
     optimizer2 = torch.optim.AdamW(params,
                                     lr=args.lr,
                                     )
+    optimizer3 = torch.optim.SGD(params,lr=0.1,momentum=0.9)
     optimizer = optimizer1
 
-    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,
+    # For Adam(AdamW)
+    scheduler1 = torch.optim.lr_scheduler.MultiStepLR(optimizer,
                                                     [30],
                                                     gamma=0.3)
+    # For SGD
+    scheduler2 = torch.optim.lr_scheduler.MultiStepLR(optimizer,
+                                                    [20,40],
+                                                    gamma=0.1)
+    scheduler = scheduler1
+
 
     # optionally resume from a checkpoint
     if args.resume:
@@ -145,12 +153,16 @@ def main_worker(args):
             #     best_acc1 = best_acc1.to(args.gpu)
             model.load_state_dict(checkpoint['model_state_dict'])
             optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+
+            log_vars=checkpoint['log_var']
+
             print("=> loaded checkpoint '{}' (epoch {})"
                   .format(args.resume, checkpoint['epoch']))
             # print("=> val accuracy is {}"
             #         .format(val_acc))
         else:
             print("=> no checkpoint found at '{}'".format(args.resume))
+
 
     # Data Loading
     normalize = transforms.Normalize(mean=[0.5, 0.5, 0.5],
@@ -225,7 +237,8 @@ def main_worker(args):
             'optimizer_state_dict': optimizer.state_dict(),
             'loss': total_loss,
             'val_acc':val_acc,
-            'best_acc':best_acc1
+            'best_acc':best_acc1,
+            'log_var':log_vars
         }, "./checkpoint/"+save_name)
 
     print("Start eval on test data.")
