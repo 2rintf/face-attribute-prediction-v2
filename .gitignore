@@ -114,6 +114,8 @@ test_pic_cifar10/
 
 runs/
 
+.idea/
+
 cl_try.py
 runs_Nov_6_UW_first_train/
 runs_UW_2nd_Adam_scheduler/
