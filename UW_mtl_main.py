@@ -127,8 +127,8 @@ def main_worker(args):
     optimizer2 = torch.optim.AdamW(params,
                                     lr=args.lr,
                                     )
-    optimizer3 = torch.optim.SGD(params,lr=0.1,momentum=0.9)
-    optimizer = optimizer1
+    optimizer3 = torch.optim.SGD(params,lr=args.lr,momentum=0.9)
+    optimizer = optimizer3
 
     # For Adam(AdamW)
     scheduler1 = torch.optim.lr_scheduler.MultiStepLR(optimizer,
@@ -138,7 +138,10 @@ def main_worker(args):
     scheduler2 = torch.optim.lr_scheduler.MultiStepLR(optimizer,
                                                     [20,40],
                                                     gamma=0.1)
-    scheduler = scheduler1
+    scheduler_temp = torch.optim.lr_scheduler.MultiStepLR(optimizer,
+                                                    [4],
+                                                    gamma=0.1)
+    scheduler = scheduler2
 
 
     # optionally resume from a checkpoint
@@ -153,7 +156,9 @@ def main_worker(args):
             #     best_acc1 = best_acc1.to(args.gpu)
             model.load_state_dict(checkpoint['model_state_dict'])
             optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            # todo: Save lr_scheduler.
 
+            
             log_vars=checkpoint['log_var']
 
             print("=> loaded checkpoint '{}' (epoch {})"
@@ -284,7 +289,7 @@ def train(train_loader,model,BCECriterion,log_vars,optimizer,epoch,args):
             targets = [t.cuda(args.gpu,non_blocking=True) for t in targets]
 
         # compute output
-        hair,eyes,nose,cheek,mouth,chin,neck,holistic = model(images)
+        hair, eyes, nose, cheek, mouth, chin, neck, holistic = model(images)
 
 
         loss_1 = UWLossCriterion(holistic,targets[0],log_vars[0],BCECriterion)

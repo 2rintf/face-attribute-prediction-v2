@@ -9,6 +9,7 @@ import torch.utils.model_zoo as model_zoo
 
 
 model_pretrained_path={
+    'resnet18':'/home/czd-2019/Downloads/resnet18-5c106cde.pth',
     'resnet34':"/home/czd-2019/Downloads/resnet34-333f7ec4.pth"
 }
 
