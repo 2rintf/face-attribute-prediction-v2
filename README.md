@@ -8,7 +8,7 @@ Fae attribute prediction with multi-Task Learning.
 - [x] Rewrite the training script of v1. 
 - [x] Modify the approach of calculating the accuracy of classification.  
 - [x] Re-train the v1-style network with ResNet-34 and new design of subtask.  
-- [ ] Train the new network with **Uncertain Weight**.  
+- [x] Train the new network with **Uncertain Weight**.  
     > [1] Han, H., Jain, A. K., Wang, F., Shan, S., & Chen, X. (2018). Heterogeneous Face Attribute Estimation: A Deep Multi-Task Learning Approach. IEEE Transactions on Pattern Analysis and Machine Intelligence, 40(11), 2597–2609. https://doi.org/10.1109/TPAMI.2017.2738004  
   
 - [ ] Train the new network with **Dynamic Weight Average**.
